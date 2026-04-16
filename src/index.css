@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", sans-serif;
+  
+  --color-bg: #0F0F0F;
+  --color-surface: #1A1A1A;
+  --color-surface-light: #262626;
+  --color-accent: #00D1FF;
+  --color-text-main: #FFFFFF;
+  --color-text-dim: #999999;
+  --color-border: rgba(255, 255, 255, 0.08);
+  
+  /* Flashy Brand Colors */
+  --color-brand-50: #e0fbff;
+  --color-brand-100: #b3f4ff;
+  --color-brand-200: #80edff;
+  --color-brand-300: #4de6ff;
+  --color-brand-400: #1adfff;
+  --color-brand-500: #00d1ff;
+  --color-brand-600: #00a8cc;
+  --color-brand-700: #007f99;
+  --color-brand-800: #005666;
+  --color-brand-900: #002d33;
+
+  --animate-gradient: gradient 6s ease infinite;
+
+  @keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-bg text-text-main font-sans antialiased selection:bg-accent selection:text-bg;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight text-text-main;
+  }
+
+  /* Flashy Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-bg;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-surface-light rounded-full border-2 border-bg hover:bg-accent transition-colors;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-surface/60 backdrop-blur-xl border border-border;
+  }
+  
+  .glow-accent {
+    box-shadow: 0 0 20px rgba(0, 209, 255, 0.3);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-white via-accent to-white bg-[length:200%_auto] animate-gradient;
+  }
+}
