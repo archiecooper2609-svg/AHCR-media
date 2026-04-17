@@ -16,13 +16,13 @@ export default function Footer({ setCurrentPage }: FooterProps) {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a 
-              href="tel:074705873388"
+              href="tel:07470587388"
               className="w-full sm:w-auto bg-accent text-black px-10 py-5 rounded-lg text-sm font-bold hover:opacity-90 transition-all text-center"
             >
-              Book a Call Now
+              Text us & Book a Call
             </a>
             <a 
-              href="tel:074705873388"
+              href="tel:07470587388"
               className="w-full sm:w-auto bg-surface-light text-text-main px-10 py-5 rounded-lg text-sm font-bold hover:bg-surface transition-all border border-border-dim text-center"
             >
               Request Free Mockup
@@ -39,11 +39,11 @@ export default function Footer({ setCurrentPage }: FooterProps) {
             <button onClick={() => setCurrentPage('home')} className="hover:text-accent transition-colors">Home</button>
             <button onClick={() => setCurrentPage('about')} className="hover:text-accent transition-colors">About</button>
             <button onClick={() => setCurrentPage('contact')} className="hover:text-accent transition-colors">Contact</button>
-            <a href="tel:074705873388" className="hover:text-accent transition-colors">Book a Call</a>
+            <a href="tel:07470587388" className="hover:text-accent transition-colors">Text us & Book a Call</a>
           </div>
           <div className="flex gap-6">
             <span>Email: AHCR@gmail.com</span>
-            <span>Call: 07470587 3388</span>
+            <span>Call: 07470587388</span>
             <span>Web: ahcragency.com</span>
           </div>
         </div>

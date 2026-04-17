@@ -38,7 +38,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-text-dim uppercase tracking-widest mb-1">Call Us</p>
-                  <p className="text-xl font-black tracking-tight">07470587 3388</p>
+                  <p className="text-xl font-black tracking-tight">07470587388</p>
                 </div>
               </div>
               
@@ -111,10 +111,10 @@ export default function Contact() {
               </div>
               
               <a 
-                href="tel:074705873388"
+                href="tel:07470587388"
                 className="w-full bg-accent text-bg py-5 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-white transition-all duration-300 shadow-[0_0_30px_rgba(0,209,255,0.3)] flex items-center justify-center gap-3 group"
               >
-                Call Now to Book
+                Text us & Book a Call Now
                 <Phone className="w-4 h-4 group-hover:scale-110 transition-transform" />
               </a>
             </form>

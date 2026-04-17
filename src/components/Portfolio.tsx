@@ -39,10 +39,10 @@ export default function Portfolio() {
             </p>
           </div>
           <a 
-            href="tel:074705873388"
+            href="tel:07470587388"
             className="text-accent font-black uppercase tracking-widest text-xs flex items-center gap-2 hover:gap-4 transition-all group"
           >
-            Book a Call Now
+            Text us & Book a Call
             <ArrowUpRight className="w-5 h-5 group-hover:rotate-45 transition-transform" />
           </a>
         </div>
@@ -51,7 +51,7 @@ export default function Portfolio() {
           {projects.map((project, i) => (
             <motion.a 
               key={i}
-              href="tel:074705873388"
+              href="tel:07470587388"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}

@@ -77,10 +77,10 @@ export default function Services() {
             <h3 className="text-3xl md:text-5xl font-display font-black tracking-tighter mb-6">Ready to start your project?</h3>
             <p className="text-bg/80 text-lg font-bold mb-10 max-w-xl mx-auto">Get a free homepage mockup and see the potential of your business online.</p>
             <a 
-              href="tel:074705873388"
+              href="tel:07470587388"
               className="inline-block bg-bg text-accent px-12 py-5 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-white transition-all duration-300 shadow-2xl"
             >
-              Book Your Call
+              Text us & Book a Call
             </a>
           </div>
         </div>

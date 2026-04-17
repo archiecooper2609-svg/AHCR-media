@@ -42,14 +42,14 @@ export default function Hero({ onCtaClick, onSecondaryClick }: HeroProps) {
               
               <div className="flex flex-col sm:flex-row items-center gap-6">
                 <a
-                  href="tel:074705873388"
+                  href="tel:07470587388"
                   className="w-full sm:w-auto bg-accent text-bg px-10 py-5 rounded-xl text-sm font-black uppercase tracking-widest hover:bg-white transition-all duration-300 shadow-[0_0_30px_rgba(0,209,255,0.4)] hover:shadow-[0_0_50px_rgba(255,255,255,0.5)] flex items-center justify-center gap-3 group"
                 >
-                  Book a Call Now
+                  Text us & Book a Call
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </a>
                 <a
-                  href="tel:074705873388"
+                  href="tel:07470587388"
                   className="w-full sm:w-auto bg-surface text-white border border-border px-10 py-5 rounded-xl text-sm font-black uppercase tracking-widest hover:bg-surface-light transition-all duration-300 flex items-center justify-center gap-3"
                 >
                   <Calendar className="w-5 h-5 text-accent" />
