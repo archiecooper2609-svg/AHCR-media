@@ -34,7 +34,7 @@ export default function Footer({ setCurrentPage }: FooterProps) {
       {/* Bottom Bar */}
       <div className="py-8 px-4 sm:px-6 lg:px-8 border-t border-border-dim">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-[12px] text-text-dim">
-          <div>mediaAHCR.com &copy; {new Date().getFullYear()}. Helping UK local businesses grow.</div>
+          <div>ahcragency &copy; {new Date().getFullYear()}. Helping UK local businesses grow.</div>
           <div className="flex gap-6">
             <button onClick={() => setCurrentPage('home')} className="hover:text-accent transition-colors">Home</button>
             <button onClick={() => setCurrentPage('about')} className="hover:text-accent transition-colors">About</button>
@@ -44,7 +44,7 @@ export default function Footer({ setCurrentPage }: FooterProps) {
           <div className="flex gap-6">
             <span>Email: AHCR@gmail.com</span>
             <span>Call: 07470587 3388</span>
-            <span>Web: mediaAHCR.com</span>
+            <span>Web: ahcragency.com</span>
           </div>
         </div>
       </div>

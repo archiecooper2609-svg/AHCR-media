@@ -39,7 +39,7 @@ export default function Navbar({ currentPage, setCurrentPage }: NavbarProps) {
             onClick={() => setCurrentPage('home')}
           >
             <span className="text-2xl font-display font-bold tracking-tighter">
-              mediaAHCR<span className="text-accent group-hover:text-white transition-colors duration-300">.com</span>
+              ahcr<span className="text-accent group-hover:text-white transition-colors duration-300">agency</span>
             </span>
           </div>
 

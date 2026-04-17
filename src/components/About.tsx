@@ -18,7 +18,7 @@ export default function About() {
               Helping local businesses <span className="text-accent">win</span> in a digital world.
             </h2>
             <p className="text-xl text-text-dim mb-12 leading-relaxed font-medium">
-              We started mediaAHCR.com because we saw too many hard-working local businesses being left behind by outdated technology and overpriced agencies.
+              We started ahcragency because we saw too many hard-working local businesses being left behind by outdated technology and overpriced agencies.
             </p>
             
             <div className="space-y-12">
