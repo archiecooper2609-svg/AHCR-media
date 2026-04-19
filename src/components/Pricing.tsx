@@ -11,42 +11,32 @@ export default function Pricing() {
   const [diagnostics, setDiagnostics] = useState<any>(null);
 
   useEffect(() => {
-    // Version tracker for cache debugging
-    console.log("Pricing Component Version: 1.0.8 (V2 Handshake)");
+    // Version tracker
+    console.log("Pricing Component Version: 1.2.0 (Production Clean)");
     
-    // Fetch configuration from server
     const fetchConfig = async (retryCount = 0) => {
       try {
         setError(null);
-        // Bypassing cache with versioned endpoint
         const apiUrl = `/api/config-v2?v=${Date.now()}`;
-        console.log(`Connecting to V2 payment system at: ${apiUrl}`);
         
         const response = await fetch(apiUrl);
-        if (!response.ok) {
-          throw new Error(`Server connection failed (${response.status})`);
-        }
+        if (!response.ok) throw new Error(`Handshake failed`);
         
         const data = await response.json();
         const { publishableKey, diagnostics: diag } = data;
         setDiagnostics(diag);
         
-        if (publishableKey && (publishableKey.trim().startsWith('pk_live_') || publishableKey.trim().startsWith('pk_test_'))) {
+        if (publishableKey && publishableKey.trim().startsWith('pk_')) {
           setStripePromise(loadStripe(publishableKey.trim()));
           setIsReady(true);
-          setError(null);
-        } else if (publishableKey) {
-          setError("Invalid Key Format. Please re-check pk_ in Settings.");
         } else {
-          setError("Keys Missing. Check the diagnostic report below.");
+          setError("Checkout system configuration incomplete.");
         }
       } catch (err: any) {
-        console.error("Payment Handshake Failed:", err);
         if (retryCount < 1) {
-          console.log(`Retrying connection...`);
           setTimeout(() => fetchConfig(retryCount + 1), 2000);
         } else {
-          setError(`Connection Lost. Try refreshing the page.`);
+          setError(`Checkout offline. Refresh to retry.`);
         }
       }
     };
@@ -250,71 +240,25 @@ export default function Pricing() {
               <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="PayPal" className="h-4" referrerPolicy="no-referrer" />
             </div>
             
-            <div className="text-[10px] text-text-dim/30 font-mono tracking-widest uppercase font-bold text-center">
-              System Verified: {isReady ? "Encrypted Handshake OK" : "Connection Failure"} &bull; BUILD_V1.1.0_SMART
+            <div className="text-[9px] text-text-dim/20 font-mono tracking-widest uppercase font-bold text-center">
+              Network encrypted &bull; Build v1.2.0
             </div>
             
-            {!isReady && diagnostics && (
-              <div className="max-w-md mx-auto mt-6 p-6 rounded-3xl bg-red-500/10 border border-red-500/20 text-left shadow-2xl backdrop-blur-md">
-                <div className="flex items-center gap-2 text-xs font-black uppercase text-red-500 mb-4 tracking-[3px]">
-                  <ShieldCheck className="w-4 h-4" />
-                  Security Audit Report
-                </div>
-                
-                <div className="space-y-3 text-[10px] font-mono font-bold">
-                  <div className="flex justify-between items-center p-2 rounded-lg bg-black/20">
-                    <span className="text-white/60">STRIPE SECRET:</span>
-                    <span className={diagnostics.secretKeyFound ? "text-green-500" : "text-red-500"}>
-                      {diagnostics.secretKeyFound ? `DETECTED (${diagnostics.secretKeyName})` : "MISSING"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 rounded-lg bg-black/20">
-                    <span className="text-white/60">SECRET FORMAT:</span>
-                    <span className={diagnostics.secretKeyValid ? "text-green-500" : "text-red-500"}>
-                      {diagnostics.secretKeyValid ? "VERIFIED (sk_...)" : "INVALID"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 rounded-lg bg-black/20">
-                    <span className="text-white/60">STRIPE PUB KEY:</span>
-                    <span className={diagnostics.publishableKeyFound ? "text-green-500" : "text-red-500"}>
-                      {diagnostics.publishableKeyFound ? `DETECTED (${diagnostics.publishableKeyName})` : "MISSING"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 rounded-lg bg-black/20">
-                    <span className="text-white/60">PUB KEY FORMAT:</span>
-                    <span className={diagnostics.publishableKeyValid ? "text-green-500" : "text-red-500"}>
-                      {diagnostics.publishableKeyValid ? "VERIFIED (pk_...)" : "INVALID"}
-                    </span>
-                  </div>
-                </div>
-
-                {diagnostics.allStripeKeys?.length > 0 && (
-                  <div className="mt-4 p-3 rounded-lg bg-white/5 border border-white/10">
-                    <div className="text-[9px] uppercase text-accent/70 mb-2 font-black">All Keys Found in Env:</div>
-                    <div className="flex flex-wrap gap-1">
-                      {diagnostics.allStripeKeys.map((k: string) => (
-                        <span key={k} className="px-1.5 py-0.5 rounded bg-black/40 text-[8px] text-white/50">{k}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="mt-6 pt-4 border-t border-red-500/20">
-                  <p className="text-[9px] text-white/40 leading-relaxed italic">
-                    <strong className="text-white/80 uppercase not-italic">Action Required:</strong> If any row above is RED, go to <strong>Settings &rarr; Secrets</strong> and check the names. I have implemented "Smart Discovery," so as long as your secret includes "STRIPE" and "SECRET" in the name, I will find it.
-                  </p>
-                  <button 
-                    onClick={manualRetry}
-                    className="mt-4 w-full py-2 bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
-                  >
-                    Rescan Keys & Refresh
-                  </button>
-                </div>
+            {!isReady && error && (
+              <div className="max-w-xs mx-auto mt-8 p-4 rounded-2xl bg-red-500/5 border border-red-500/10 text-center">
+                <div className="text-[10px] font-bold text-red-400 mb-1">Configuration Error</div>
+                <div className="text-[9px] text-text-dim mb-3">{error}</div>
+                <button 
+                  onClick={manualRetry}
+                  className="text-[9px] font-black uppercase text-accent hover:underline tracking-widest"
+                >
+                  Force Rescan Keys
+                </button>
               </div>
             )}
           </div>
-          <p className="mt-6 text-xs font-bold uppercase tracking-widest text-text-dim text-center">
-            Secure payments powered by Stripe &bull; 100% Satisfaction Guarantee
+          <p className="mt-8 text-[10px] font-black uppercase tracking-[3px] text-text-dim/40 text-center">
+            Secured via Stripe SSL encryption
           </p>
         </div>
       </div>
