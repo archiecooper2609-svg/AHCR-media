@@ -22,6 +22,7 @@ export default function Navbar({ currentPage, setCurrentPage }: NavbarProps) {
   const navLinks = [
     { name: 'Home', id: 'home' },
     { name: 'About', id: 'about' },
+    { name: 'Pricing', id: 'pricing' },
     { name: 'Contact', id: 'contact' },
     { name: 'Text us & Book a Call', id: 'book', href: 'tel:07470587388' },
   ];
@@ -58,7 +59,18 @@ export default function Navbar({ currentPage, setCurrentPage }: NavbarProps) {
               ) : (
                 <button
                   key={link.id}
-                  onClick={() => setCurrentPage(link.id)}
+                  onClick={() => {
+                    if (link.id === 'pricing') {
+                      if (currentPage !== 'home') {
+                        setCurrentPage('home');
+                        setTimeout(() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }), 100);
+                      } else {
+                        document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    } else {
+                      setCurrentPage(link.id);
+                    }
+                  }}
                   className={`text-xs font-bold uppercase tracking-widest transition-all hover:text-accent relative py-2 group ${
                     currentPage === link.id ? 'text-accent' : 'text-text-dim'
                   }`}
@@ -114,8 +126,21 @@ export default function Navbar({ currentPage, setCurrentPage }: NavbarProps) {
                   <button
                     key={link.id}
                     onClick={() => {
-                      setCurrentPage(link.id);
-                      setIsOpen(false);
+                      if (link.id === 'pricing') {
+                        if (currentPage !== 'home') {
+                          setCurrentPage('home');
+                          setTimeout(() => {
+                            document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+                            setIsOpen(false);
+                          }, 100);
+                        } else {
+                          document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+                          setIsOpen(false);
+                        }
+                      } else {
+                        setCurrentPage(link.id);
+                        setIsOpen(false);
+                      }
                     }}
                     className={`block w-full text-left px-4 py-4 text-sm font-bold uppercase tracking-widest rounded-lg transition-colors ${
                       currentPage === link.id ? 'text-accent bg-surface-light' : 'text-text-dim hover:text-accent hover:bg-surface-light/50'

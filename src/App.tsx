@@ -7,6 +7,7 @@ import Process from './components/Process';
 import Services from './components/Services';
 import Portfolio from './components/Portfolio';
 import Testimonials from './components/Testimonials';
+import Pricing from './components/Pricing';
 import Footer from './components/Footer';
 import About from './components/About';
 import Contact from './components/Contact';
@@ -34,6 +35,7 @@ export default function App() {
             <Solution />
             <Process />
             <Services />
+            <Pricing />
             <Portfolio />
             <Testimonials />
           </>
