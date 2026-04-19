@@ -3,6 +3,7 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import Stripe from "stripe";
+import "dotenv/config";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,10 +12,10 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Global logging middleware to debug API reachability
+  // Global logging middleware
   app.use((req, res, next) => {
     if (req.url.startsWith('/api')) {
-      console.log(`[API REQUEST] ${req.method} ${req.url}`);
+      console.log(`[PAYMENT SERVER] ${req.method} ${req.url}`);
     }
     next();
   });
@@ -32,35 +33,25 @@ async function startServer() {
 
   app.use(express.json());
 
-  // Log Stripe Configuration Status
-  console.log("--- Payment System Diagnostics ---");
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  const publishableKey = process.env.VITE_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY;
-  
-  if (secretKey) {
-    console.log(`✅ SECRET KEY: Found (${secretKey.substring(0, 7)}...)`);
-  } else {
-    console.log("❌ SECRET KEY: MISSING");
-  }
-
-  if (publishableKey) {
-    console.log(`✅ PUBLISHABLE KEY: Found (${publishableKey.substring(0, 7)}...)`);
-  } else {
-    console.log("❌ PUBLISHABLE KEY: MISSING");
-  }
-  console.log(`NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
-  console.log("----------------------------------");
-
-  // Health check
-  app.get("/api/health", (req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
-
-  // API Route: Provide publishable key to client
+  // API Route: Configuration & System Diagnostics
   app.get("/api/config", (req, res) => {
     try {
-      const key = process.env.VITE_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY;
-      res.json({ publishableKey: key });
+      const secretKey = process.env.STRIPE_SECRET_KEY;
+      const pubKey = process.env.VITE_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY;
+      
+      const diagnostics = {
+        secretKeySet: !!secretKey,
+        publishableKeySet: !!pubKey,
+        secretKeyValid: secretKey ? (secretKey.trim().startsWith('sk_live_') || secretKey.trim().startsWith('sk_test_')) : false,
+        publishableKeyValid: pubKey ? (pubKey.trim().startsWith('pk_live_') || pubKey.trim().startsWith('pk_test_')) : false,
+        env: process.env.NODE_ENV || 'development'
+      };
+
+      res.json({ 
+        publishableKey: pubKey,
+        diagnostics 
+      });
     } catch (err: any) {
-      console.error("Config API Error:", err);
       res.status(500).json({ error: err.message });
     }
   });

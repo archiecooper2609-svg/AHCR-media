@@ -8,42 +8,45 @@ export default function Pricing() {
   const [stripePromise, setStripePromise] = useState<Promise<StripeType | null> | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [diagnostics, setDiagnostics] = useState<any>(null);
 
   useEffect(() => {
     // Version tracker for cache debugging
-    console.log("Pricing Component Version: 1.0.6 (Origin Handshake)");
+    console.log("Pricing Component Version: 1.0.7 (Relative Handshake)");
     
     // Fetch configuration from server
     const fetchConfig = async (retryCount = 0) => {
       try {
         setError(null);
-        // Using explicit origin to avoid relative path issues in iframes
-        const apiUrl = `${window.location.origin}/api/config`;
-        console.log(`Handshaking with payment server at: ${apiUrl}`);
+        // Using relative path for best compatibility with proxies and iframes
+        const apiUrl = '/api/config';
+        console.log(`Connecting to payment system at: ${apiUrl}`);
         
         const response = await fetch(apiUrl);
         if (!response.ok) {
-          throw new Error(`Server returned status: ${response.status}`);
+          throw new Error(`Server connection failed (${response.status})`);
         }
         
-        const { publishableKey } = await response.json();
+        const data = await response.json();
+        const { publishableKey, diagnostics: diag } = data;
+        setDiagnostics(diag);
         
         if (publishableKey && (publishableKey.trim().startsWith('pk_live_') || publishableKey.trim().startsWith('pk_test_'))) {
           setStripePromise(loadStripe(publishableKey.trim()));
           setIsReady(true);
           setError(null);
         } else if (publishableKey) {
-          setError("Invalid Key Format. Ensure your Publishable Key starts with 'pk_'.");
+          setError("Check Key: Your Publishable Key format is invalid.");
         } else {
-          setError("Configuration Missing. Please check your Stripe keys in Settings.");
+          setError("Check Keys: No keys detected in your environment.");
         }
-      } catch (err) {
-        console.error("Failed to load payment configuration:", err);
-        if (retryCount < 2) {
-          console.log(`Retrying handshake (${retryCount + 1})...`);
+      } catch (err: any) {
+        console.error("Payment Handshake Failed:", err);
+        if (retryCount < 1) {
+          console.log(`Retrying connection...`);
           setTimeout(() => fetchConfig(retryCount + 1), 2000);
         } else {
-          setError(`Network Issue. The website couldn't reach your server. Try refreshing.`);
+          setError(`Connection Failure: The app cannot reach its own server. Error: ${err.message}`);
         }
       }
     };
@@ -248,8 +251,43 @@ export default function Pricing() {
             </div>
             
             <div className="text-[10px] text-text-dim/30 font-mono tracking-widest uppercase font-bold">
-              System Verified: {isReady ? "Encrypted Handshake OK" : "Connection Refused"} &bull; BUILD_V1.0.6_REL
+              System Verified: {isReady ? "Encrypted Handshake OK" : "Connection Failure"} &bull; BUILD_V1.0.7_REL
             </div>
+            
+            {!isReady && diagnostics && (
+              <div className="max-w-xs mx-auto p-4 rounded-xl bg-red-500/5 border border-red-500/10 text-left">
+                <div className="text-[10px] font-black uppercase text-red-400 mb-2 tracking-widest">Diagnostic Report</div>
+                <div className="space-y-1 text-[9px] font-mono text-text-dim">
+                  <div className="flex justify-between">
+                    <span>Secret Key Injected:</span>
+                    <span className={diagnostics.secretKeySet ? "text-green-500" : "text-red-500"}>
+                      {diagnostics.secretKeySet ? "YES" : "MISSING"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Secret Key Format:</span>
+                    <span className={diagnostics.secretKeyValid ? "text-green-500" : "text-red-500"}>
+                      {diagnostics.secretKeyValid ? "VALID" : "INVALID"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Publishable Key Injected:</span>
+                    <span className={diagnostics.publishableKeySet ? "text-green-500" : "text-red-500"}>
+                      {diagnostics.publishableKeySet ? "YES" : "MISSING"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Publishable Key Format:</span>
+                    <span className={diagnostics.publishableKeyValid ? "text-green-500" : "text-red-500"}>
+                      {diagnostics.publishableKeyValid ? "VALID" : "INVALID"}
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-red-500/10 text-[8px] italic leading-relaxed">
+                  Important: Ensure keys are in 'Settings' &rarr; 'Secrets' with EXACT names used in the report.
+                </div>
+              </div>
+            )}
           </div>
           <p className="mt-6 text-xs font-bold uppercase tracking-widest text-text-dim">
             Secure payments powered by Stripe &bull; 100% Satisfaction Guarantee
