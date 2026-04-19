@@ -1,12 +1,42 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Check, CreditCard, Sparkles } from 'lucide-react';
-import { loadStripe } from '@stripe/stripe-js';
-
-// Note: In a real app, you would use import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
-// For this demo, we assume the user will provide it.
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+import { Check, CreditCard, Sparkles, Loader2, ShieldCheck } from 'lucide-react';
+import { loadStripe, Stripe as StripeType } from '@stripe/stripe-js';
 
 export default function Pricing() {
+  const [loading, setLoading] = useState<string | null>(null);
+  const [stripePromise, setStripePromise] = useState<Promise<StripeType | null> | null>(null);
+  const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Version tracker for cache debugging
+    console.log("Pricing Component Version: 1.0.4 (Secure Handshake)");
+    
+    // Fetch configuration from server
+    const fetchConfig = async () => {
+      try {
+        const response = await fetch('/api/config');
+        const { publishableKey } = await response.json();
+        
+        if (publishableKey && publishableKey.trim().startsWith('pk_')) {
+          setStripePromise(loadStripe(publishableKey.trim()));
+          setIsReady(true);
+          setError(null);
+        } else if (publishableKey) {
+          setError("Invalid Publishable Key format. It must start with pk_.");
+        } else {
+          setError("Stripe Publishable Key not found in environment settings.");
+        }
+      } catch (err) {
+        console.error("Failed to load payment configuration:", err);
+        setError("Network error: Could not reach payment server.");
+      }
+    };
+    
+    fetchConfig();
+  }, []);
+
   const plans = [
     {
       name: "Analysis Standard",
@@ -39,7 +69,15 @@ export default function Pricing() {
   ];
 
   const handlePayment = async (priceId: string) => {
+    if (!isReady) {
+      alert(`Payment system is not ready. Error: ${error || "Still initializing configuration from server..."}`);
+      return;
+    }
+    
     try {
+      setLoading(priceId);
+      console.log(`Checking out with PriceId: ${priceId}`);
+      
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -51,16 +89,32 @@ export default function Pricing() {
       const session = await response.json();
 
       if (session.error) {
-        alert(session.error);
+        alert(`Server Error: ${session.error}`);
+        setLoading(null);
         return;
       }
 
-      if (session.url) {
-        window.location.href = session.url;
+      if (session.id) {
+        const stripe = await stripePromise;
+        if (stripe) {
+          const { error: redirectError } = await stripe.redirectToCheckout({
+            sessionId: session.id,
+          });
+          if (redirectError) {
+            console.error('Redirect error:', redirectError);
+            alert(`Stripe Redirect Error: ${redirectError.message}`);
+          }
+        } else if (session.url) {
+          window.location.href = session.url;
+        }
+      } else {
+        alert("Server Error: Received no session ID from checkout request.");
       }
-    } catch (error) {
-      console.error('Payment error:', error);
-      alert('Payment failed to initialize. Check console for details.');
+    } catch (err) {
+      console.error('Payment error:', err);
+      alert(`Connection Error: Unable to start checkout. Please check your internet connection.`);
+    } finally {
+      if (!isReady) setLoading(null);
     }
   };
 
@@ -120,23 +174,57 @@ export default function Pricing() {
                 ))}
               </div>
 
+              <div className={`mb-8 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[2px] px-4 py-2 rounded-full border ${
+                isReady 
+                  ? 'text-accent bg-accent/5 border-accent/10' 
+                  : 'text-red-500 bg-red-500/5 border-red-500/10'
+              }`}>
+                {isReady ? (
+                  <>
+                    <ShieldCheck className="w-3 h-3" />
+                    Secure Checkout Ready
+                  </>
+                ) : (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    {error || "Initializing Secure Checkout..."}
+                  </>
+                )}
+              </div>
+
               <button
                 onClick={() => handlePayment(plan.priceId)}
-                className={`w-full py-5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 ${
+                disabled={loading !== null}
+                className={`w-full py-5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed ${
                   plan.featured
                     ? 'bg-accent text-bg hover:bg-white shadow-[0_0_30px_rgba(0,209,255,0.3)]'
                     : 'bg-surface-light text-white border border-border hover:bg-surface'
                 }`}
               >
-                <CreditCard className="w-5 h-5" />
-                Get Started Now
+                {loading === plan.priceId ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <CreditCard className="w-5 h-5" />
+                )}
+                {loading === plan.priceId ? 'Processing...' : 'Get Started Now'}
               </button>
             </motion.div>
           ))}
         </div>
 
-        <div className="mt-16 text-center opacity-50">
-          <p className="text-xs font-bold uppercase tracking-widest">
+        <div className="mt-16 text-center opacity-70">
+          <div className="flex flex-col items-center gap-6">
+            <div className="flex justify-center gap-4 grayscale opacity-50">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-4" referrerPolicy="no-referrer" />
+              <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-4" referrerPolicy="no-referrer" />
+              <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="PayPal" className="h-4" referrerPolicy="no-referrer" />
+            </div>
+            
+            <div className="text-[10px] text-text-dim/30 font-mono tracking-widest uppercase font-bold">
+              System Verified: {isReady ? "Encrypted Handshake OK" : "Waiting for Keys"} &bull; BUILD_V1.0.5_REL
+            </div>
+          </div>
+          <p className="mt-6 text-xs font-bold uppercase tracking-widest text-text-dim">
             Secure payments powered by Stripe &bull; 100% Satisfaction Guarantee
           </p>
         </div>

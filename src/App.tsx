@@ -15,9 +15,17 @@ import Contact from './components/Contact';
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home');
 
-  // Scroll to top when page changes
+  // Scroll to top when page changes and handle payment success
   useEffect(() => {
     window.scrollTo(0, 0);
+    
+    // Check for payment success
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('payment') === 'success') {
+      alert('Payment Successful! Our lead analysts are already running your structural audit. We will be in touch shortly.');
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, [currentPage]);
 
   return (

@@ -14,13 +14,45 @@ async function startServer() {
 
   let stripe: Stripe | null = null;
   const getStripe = () => {
-    if (!stripe && process.env.STRIPE_SECRET_KEY) {
-      stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    if (!stripe) {
+      const key = process.env.STRIPE_SECRET_KEY;
+      if (key && key.trim() !== "" && key.startsWith('sk_')) {
+        stripe = new Stripe(key.trim());
+      } else if (key) {
+        console.error("Payment Error: STRIPE_SECRET_KEY is provided but does not appear to be a valid Stripe Secret Key (should start with sk_).");
+      }
     }
     return stripe;
   };
 
   app.use(express.json());
+
+  // Log Stripe Configuration Status
+  console.log("--- Stripe Configuration Status ---");
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  const publishableKey = process.env.VITE_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY;
+  
+  if (secretKey) {
+    console.log("✅ STRIPE_SECRET_KEY is defined " + (secretKey.startsWith('sk_') ? "(Valid format)" : "(INVALID format - should start with sk_)"));
+  } else {
+    console.log("❌ STRIPE_SECRET_KEY is MISSING");
+  }
+
+  if (publishableKey) {
+    console.log("✅ STRIPE_PUBLISHABLE_KEY is defined " + (publishableKey.startsWith('pk_') ? "(Valid format)" : "(INVALID format - should start with pk_)"));
+  } else {
+    console.log("❌ STRIPE_PUBLISHABLE_KEY is MISSING");
+  }
+  console.log("-----------------------------------");
+
+  // API Route: Provide publishable key to client
+  app.get("/api/config", (req, res) => {
+    const key = process.env.VITE_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY;
+    if (!key) {
+      console.warn("Pricing Error: No publishable key found in environment.");
+    }
+    res.json({ publishableKey: key });
+  });
 
   // API Route: Create Stripe Checkout Session
   app.post("/api/create-checkout-session", async (req, res) => {
@@ -29,7 +61,8 @@ async function startServer() {
       const stripeClient = getStripe();
 
       if (!stripeClient) {
-        return res.status(500).json({ error: "Stripe is not configured. Please add STRIPE_SECRET_KEY to environment variables." });
+        console.error("Payment Error: STRIPE_SECRET_KEY is missing from environment variables.");
+        return res.status(500).json({ error: "Checkout is currently unavailable. Please contact support." });
       }
 
       // Determine price and details based on priceId
