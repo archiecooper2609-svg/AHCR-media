@@ -23,9 +23,18 @@ async function startServer() {
   let stripe: Stripe | null = null;
   const getStripe = () => {
     if (!stripe) {
-      const key = process.env.STRIPE_SECRET_KEY;
-      if (key && key.trim() !== "" && key.startsWith('sk_')) {
+      // Smart Discovery: Search for anything that looks like a Stripe Secret Key
+      const secretKeyName = Object.keys(process.env).find(k => 
+        k.toUpperCase().includes('STRIPE') && 
+        k.toUpperCase().includes('SECRET')
+      );
+      const key = secretKeyName ? process.env[secretKeyName] : null;
+
+      if (key && key.trim() !== "" && (key.trim().startsWith('sk_live') || key.trim().startsWith('sk_test'))) {
+        console.log(`[PAYMENT SERVER] Initialized Stripe Client using found key: ${secretKeyName}`);
         stripe = new Stripe(key.trim());
+      } else {
+        console.warn(`[PAYMENT SERVER] STRIPE_SECRET_KEY not found or invalid format. Found names: ${Object.keys(process.env).filter(k => k.includes('STRIPE')).join(', ')}`);
       }
     }
     return stripe;
@@ -36,21 +45,35 @@ async function startServer() {
   // API Route: V2 Configuration & Deep Diagnostics
   app.get("/api/config-v2", (req, res) => {
     try {
-      const secretKey = process.env.STRIPE_SECRET_KEY;
-      const pubKey = process.env.VITE_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY;
+      // Smart Discovery for Publishable Key
+      const pubKeyName = Object.keys(process.env).find(k => 
+        k.toUpperCase().includes('STRIPE') && 
+        k.toUpperCase().includes('PUBLISHABLE')
+      ) || Object.keys(process.env).find(k => k.toUpperCase() === 'STRIPE_PK');
+
+      const pubKey = pubKeyName ? process.env[pubKeyName] : null;
       
-      const stripeKeysFound = Object.keys(process.env).filter(k => k.toUpperCase().includes('STRIPE'));
+      // Smart Discovery for Secret Key
+      const secretKeyName = Object.keys(process.env).find(k => 
+        k.toUpperCase().includes('STRIPE') && 
+        k.toUpperCase().includes('SECRET')
+      );
+      const secretKey = secretKeyName ? process.env[secretKeyName] : null;
+
+      const stripeKeysInEnv = Object.keys(process.env).filter(k => k.toUpperCase().includes('STRIPE'));
 
       const diagnostics = {
-        secretKeySet: !!secretKey,
-        publishableKeySet: !!pubKey,
-        secretKeyValid: secretKey ? (secretKey.trim().startsWith('sk_live_') || secretKey.trim().startsWith('sk_test_')) : false,
-        publishableKeyValid: pubKey ? (pubKey.trim().startsWith('pk_live_') || pubKey.trim().startsWith('pk_test_')) : false,
-        keysFoundInEnv: stripeKeysFound,
+        secretKeyFound: !!secretKey,
+        secretKeyName: secretKeyName || "NOT FOUND",
+        publishableKeyFound: !!pubKey,
+        publishableKeyName: pubKeyName || "NOT FOUND",
+        secretKeyValid: secretKey ? (secretKey.trim().startsWith('sk_live') || secretKey.trim().startsWith('sk_test')) : false,
+        publishableKeyValid: pubKey ? (pubKey.trim().startsWith('pk_live') || pubKey.trim().startsWith('pk_test')) : false,
+        allStripeKeys: stripeKeysInEnv,
         env: process.env.NODE_ENV || 'development'
       };
 
-      console.log(`[API V2] Serving config. Found keys: ${stripeKeysFound.join(', ')}`);
+      console.log(`[API V2] Serving config. Active Pub Key: ${pubKeyName || 'None'}`);
 
       res.json({ 
         publishableKey: pubKey,
