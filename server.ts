@@ -3,7 +3,6 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import Stripe from "stripe";
-import "dotenv/config";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,14 +11,20 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  // Global logging middleware to debug API reachability
+  app.use((req, res, next) => {
+    if (req.url.startsWith('/api')) {
+      console.log(`[API REQUEST] ${req.method} ${req.url}`);
+    }
+    next();
+  });
+
   let stripe: Stripe | null = null;
   const getStripe = () => {
     if (!stripe) {
       const key = process.env.STRIPE_SECRET_KEY;
       if (key && key.trim() !== "" && key.startsWith('sk_')) {
         stripe = new Stripe(key.trim());
-      } else if (key) {
-        console.error("Payment Error: STRIPE_SECRET_KEY is provided but does not appear to be a valid Stripe Secret Key (should start with sk_).");
       }
     }
     return stripe;
@@ -28,30 +33,36 @@ async function startServer() {
   app.use(express.json());
 
   // Log Stripe Configuration Status
-  console.log("--- Stripe Configuration Status ---");
+  console.log("--- Payment System Diagnostics ---");
   const secretKey = process.env.STRIPE_SECRET_KEY;
   const publishableKey = process.env.VITE_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY;
   
   if (secretKey) {
-    console.log("✅ STRIPE_SECRET_KEY is defined " + (secretKey.startsWith('sk_') ? "(Valid format)" : "(INVALID format - should start with sk_)"));
+    console.log(`✅ SECRET KEY: Found (${secretKey.substring(0, 7)}...)`);
   } else {
-    console.log("❌ STRIPE_SECRET_KEY is MISSING");
+    console.log("❌ SECRET KEY: MISSING");
   }
 
   if (publishableKey) {
-    console.log("✅ STRIPE_PUBLISHABLE_KEY is defined " + (publishableKey.startsWith('pk_') ? "(Valid format)" : "(INVALID format - should start with pk_)"));
+    console.log(`✅ PUBLISHABLE KEY: Found (${publishableKey.substring(0, 7)}...)`);
   } else {
-    console.log("❌ STRIPE_PUBLISHABLE_KEY is MISSING");
+    console.log("❌ PUBLISHABLE KEY: MISSING");
   }
-  console.log("-----------------------------------");
+  console.log(`NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
+  console.log("----------------------------------");
+
+  // Health check
+  app.get("/api/health", (req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
 
   // API Route: Provide publishable key to client
   app.get("/api/config", (req, res) => {
-    const key = process.env.VITE_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY;
-    if (!key) {
-      console.warn("Pricing Error: No publishable key found in environment.");
+    try {
+      const key = process.env.VITE_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY;
+      res.json({ publishableKey: key });
+    } catch (err: any) {
+      console.error("Config API Error:", err);
+      res.status(500).json({ error: err.message });
     }
-    res.json({ publishableKey: key });
   });
 
   // API Route: Create Stripe Checkout Session

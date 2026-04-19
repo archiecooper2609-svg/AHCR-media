@@ -11,31 +11,54 @@ export default function Pricing() {
 
   useEffect(() => {
     // Version tracker for cache debugging
-    console.log("Pricing Component Version: 1.0.4 (Secure Handshake)");
+    console.log("Pricing Component Version: 1.0.6 (Origin Handshake)");
     
     // Fetch configuration from server
-    const fetchConfig = async () => {
+    const fetchConfig = async (retryCount = 0) => {
       try {
-        const response = await fetch('/api/config');
+        setError(null);
+        // Using explicit origin to avoid relative path issues in iframes
+        const apiUrl = `${window.location.origin}/api/config`;
+        console.log(`Handshaking with payment server at: ${apiUrl}`);
+        
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error(`Server returned status: ${response.status}`);
+        }
+        
         const { publishableKey } = await response.json();
         
-        if (publishableKey && publishableKey.trim().startsWith('pk_')) {
+        if (publishableKey && (publishableKey.trim().startsWith('pk_live_') || publishableKey.trim().startsWith('pk_test_'))) {
           setStripePromise(loadStripe(publishableKey.trim()));
           setIsReady(true);
           setError(null);
         } else if (publishableKey) {
-          setError("Invalid Publishable Key format. It must start with pk_.");
+          setError("Invalid Key Format. Ensure your Publishable Key starts with 'pk_'.");
         } else {
-          setError("Stripe Publishable Key not found in environment settings.");
+          setError("Configuration Missing. Please check your Stripe keys in Settings.");
         }
       } catch (err) {
         console.error("Failed to load payment configuration:", err);
-        setError("Network error: Could not reach payment server.");
+        if (retryCount < 2) {
+          console.log(`Retrying handshake (${retryCount + 1})...`);
+          setTimeout(() => fetchConfig(retryCount + 1), 2000);
+        } else {
+          setError(`Network Issue. The website couldn't reach your server. Try refreshing.`);
+        }
       }
     };
     
     fetchConfig();
   }, []);
+
+  const manualRetry = () => {
+    setIsReady(false);
+    setError("Re-initializing...");
+    // Force a small delay to show state change
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+  };
 
   const plans = [
     {
@@ -174,23 +197,27 @@ export default function Pricing() {
                 ))}
               </div>
 
-              <div className={`mb-8 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[2px] px-4 py-2 rounded-full border ${
+            <div 
+              onClick={!isReady ? manualRetry : undefined}
+              className={`mb-8 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[2px] px-4 py-2 rounded-full border transition-all ${
                 isReady 
                   ? 'text-accent bg-accent/5 border-accent/10' 
-                  : 'text-red-500 bg-red-500/5 border-red-500/10'
-              }`}>
-                {isReady ? (
-                  <>
-                    <ShieldCheck className="w-3 h-3" />
-                    Secure Checkout Ready
-                  </>
-                ) : (
-                  <>
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    {error || "Initializing Secure Checkout..."}
-                  </>
-                )}
-              </div>
+                  : 'text-red-500 bg-red-500/5 border-red-500/10 cursor-pointer hover:bg-red-500/10'
+              }`}
+            >
+              {isReady ? (
+                <>
+                  <ShieldCheck className="w-3 h-3" />
+                  Secure Checkout Ready
+                </>
+              ) : (
+                <>
+                  {error?.includes("Network") ? <Loader2 className="w-3 h-3 animate-spin" /> : <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
+                  {error || "Initializing Secure Checkout..."}
+                  {!isReady && <span className="underline ml-1 opacity-50">Click to Retry</span>}
+                </>
+              )}
+            </div>
 
               <button
                 onClick={() => handlePayment(plan.priceId)}
@@ -221,7 +248,7 @@ export default function Pricing() {
             </div>
             
             <div className="text-[10px] text-text-dim/30 font-mono tracking-widest uppercase font-bold">
-              System Verified: {isReady ? "Encrypted Handshake OK" : "Waiting for Keys"} &bull; BUILD_V1.0.5_REL
+              System Verified: {isReady ? "Encrypted Handshake OK" : "Connection Refused"} &bull; BUILD_V1.0.6_REL
             </div>
           </div>
           <p className="mt-6 text-xs font-bold uppercase tracking-widest text-text-dim">
