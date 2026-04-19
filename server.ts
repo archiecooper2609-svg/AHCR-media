@@ -33,25 +33,31 @@ async function startServer() {
 
   app.use(express.json());
 
-  // API Route: Configuration & System Diagnostics
-  app.get("/api/config", (req, res) => {
+  // API Route: V2 Configuration & Deep Diagnostics
+  app.get("/api/config-v2", (req, res) => {
     try {
       const secretKey = process.env.STRIPE_SECRET_KEY;
       const pubKey = process.env.VITE_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY;
       
+      const stripeKeysFound = Object.keys(process.env).filter(k => k.toUpperCase().includes('STRIPE'));
+
       const diagnostics = {
         secretKeySet: !!secretKey,
         publishableKeySet: !!pubKey,
         secretKeyValid: secretKey ? (secretKey.trim().startsWith('sk_live_') || secretKey.trim().startsWith('sk_test_')) : false,
         publishableKeyValid: pubKey ? (pubKey.trim().startsWith('pk_live_') || pubKey.trim().startsWith('pk_test_')) : false,
+        keysFoundInEnv: stripeKeysFound,
         env: process.env.NODE_ENV || 'development'
       };
+
+      console.log(`[API V2] Serving config. Found keys: ${stripeKeysFound.join(', ')}`);
 
       res.json({ 
         publishableKey: pubKey,
         diagnostics 
       });
     } catch (err: any) {
+      console.error("Config V2 API Error:", err);
       res.status(500).json({ error: err.message });
     }
   });

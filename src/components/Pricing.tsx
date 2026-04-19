@@ -12,15 +12,15 @@ export default function Pricing() {
 
   useEffect(() => {
     // Version tracker for cache debugging
-    console.log("Pricing Component Version: 1.0.7 (Relative Handshake)");
+    console.log("Pricing Component Version: 1.0.8 (V2 Handshake)");
     
     // Fetch configuration from server
     const fetchConfig = async (retryCount = 0) => {
       try {
         setError(null);
-        // Using relative path for best compatibility with proxies and iframes
-        const apiUrl = '/api/config';
-        console.log(`Connecting to payment system at: ${apiUrl}`);
+        // Bypassing cache with versioned endpoint
+        const apiUrl = `/api/config-v2?v=${Date.now()}`;
+        console.log(`Connecting to V2 payment system at: ${apiUrl}`);
         
         const response = await fetch(apiUrl);
         if (!response.ok) {
@@ -36,9 +36,9 @@ export default function Pricing() {
           setIsReady(true);
           setError(null);
         } else if (publishableKey) {
-          setError("Check Key: Your Publishable Key format is invalid.");
+          setError("Invalid Key Format. Please re-check pk_ in Settings.");
         } else {
-          setError("Check Keys: No keys detected in your environment.");
+          setError("Keys Missing. Check the diagnostic report below.");
         }
       } catch (err: any) {
         console.error("Payment Handshake Failed:", err);
@@ -46,7 +46,7 @@ export default function Pricing() {
           console.log(`Retrying connection...`);
           setTimeout(() => fetchConfig(retryCount + 1), 2000);
         } else {
-          setError(`Connection Failure: The app cannot reach its own server. Error: ${err.message}`);
+          setError(`Connection Lost. Try refreshing the page.`);
         }
       }
     };
@@ -251,7 +251,7 @@ export default function Pricing() {
             </div>
             
             <div className="text-[10px] text-text-dim/30 font-mono tracking-widest uppercase font-bold">
-              System Verified: {isReady ? "Encrypted Handshake OK" : "Connection Failure"} &bull; BUILD_V1.0.7_REL
+              System Verified: {isReady ? "Encrypted Handshake OK" : "Connection Refused"} &bull; BUILD_V1.0.8_REL
             </div>
             
             {!isReady && diagnostics && (
@@ -259,32 +259,30 @@ export default function Pricing() {
                 <div className="text-[10px] font-black uppercase text-red-400 mb-2 tracking-widest">Diagnostic Report</div>
                 <div className="space-y-1 text-[9px] font-mono text-text-dim">
                   <div className="flex justify-between">
-                    <span>Secret Key Injected:</span>
+                    <span>Secret Key ( sk_... ):</span>
                     <span className={diagnostics.secretKeySet ? "text-green-500" : "text-red-500"}>
-                      {diagnostics.secretKeySet ? "YES" : "MISSING"}
+                      {diagnostics.secretKeySet ? "INJECTED" : "MISSING"}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Secret Key Format:</span>
-                    <span className={diagnostics.secretKeyValid ? "text-green-500" : "text-red-500"}>
-                      {diagnostics.secretKeyValid ? "VALID" : "INVALID"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Publishable Key Injected:</span>
+                    <span>Pub Key ( pk_... ):</span>
                     <span className={diagnostics.publishableKeySet ? "text-green-500" : "text-red-500"}>
-                      {diagnostics.publishableKeySet ? "YES" : "MISSING"}
+                      {diagnostics.publishableKeySet ? "INJECTED" : "MISSING"}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Publishable Key Format:</span>
-                    <span className={diagnostics.publishableKeyValid ? "text-green-500" : "text-red-500"}>
-                      {diagnostics.publishableKeyValid ? "VALID" : "INVALID"}
-                    </span>
+                  <div className="mt-2 text-accent/50 text-[7px] uppercase tracking-[1px] font-black">Detected Env Vars:</div>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {diagnostics.keysFoundInEnv?.length > 0 ? (
+                      diagnostics.keysFoundInEnv.map((k: string) => (
+                        <span key={k} className="px-1 py-0.5 rounded-sm bg-white/5 border border-white/10 text-[7px]">{k}</span>
+                      ))
+                    ) : (
+                      <span className="text-red-500 text-[7px]">NONE FOUND</span>
+                    )}
                   </div>
                 </div>
                 <div className="mt-3 pt-3 border-t border-red-500/10 text-[8px] italic leading-relaxed">
-                  Important: Ensure keys are in 'Settings' &rarr; 'Secrets' with EXACT names used in the report.
+                  Tip: Ensure names in 'Settings' &rarr; 'Secrets' match the required names: <span className="font-bold text-white/80 underline">STRIPE_SECRET_KEY</span> and <span className="font-bold text-white/80 underline">VITE_STRIPE_PUBLISHABLE_KEY</span>.
                 </div>
               </div>
             )}
